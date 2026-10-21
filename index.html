@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moisture Sorption &amp; Water Activity Estimator — Asif SaaS Studio</title>
+<style>
+  :root{
+    --emerald:#103E32; --emerald2:#0B3D2E; --lime:#DCF5B5; --paper:#F7F8F2;
+    --gold:#C9A227; --ink:#1c2a24; --mut:#5a6b62; --line:#d8e2d5;
+    --bad:#b3261e; --warn:#9a6a00; --ok:#1e6b3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:var(--paper);color:var(--ink);line-height:1.45}
+  header{background:linear-gradient(135deg,var(--emerald2),var(--emerald));color:#f3f6ec;padding:22px 16px 18px;text-align:center;border-bottom:4px solid var(--gold)}
+  header .brand{letter-spacing:3px;color:var(--gold);font-size:12px;text-transform:uppercase}
+  header h1{margin:6px 0 4px;font-size:26px;font-weight:bold}
+  header p{margin:2px 0;color:var(--lime);font-size:14px}
+  main{max-width:1060px;margin:0 auto;padding:16px}
+  section{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:0 0 18px;box-shadow:0 1px 3px rgba(16,62,50,.06)}
+  h2{color:var(--emerald);margin:2px 0 10px;font-size:20px;border-bottom:2px solid var(--lime);padding-bottom:5px}
+  h3{color:var(--emerald);margin:14px 0 6px;font-size:16px}
+  label{display:block;font-size:13px;color:var(--mut);margin:0 0 3px}
+  input,select,textarea{font:inherit;font-size:14px;padding:7px 8px;border:1px solid #b9c8b4;border-radius:6px;background:#fff;width:100%;color:var(--ink)}
+  textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--lime);border-color:var(--emerald)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .btn{background:var(--emerald);color:#fff;border:none;border-radius:6px;padding:9px 16px;font:inherit;font-size:14px;cursor:pointer;margin:4px 6px 4px 0}
+  .btn:hover{background:#17503f}
+  .btn.alt{background:#fff;color:var(--emerald);border:1.5px solid var(--emerald)}
+  .btn.small{padding:5px 10px;font-size:13px}
+  .result{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:6px;padding:10px 14px;margin-top:12px;font-size:15px}
+  .result b{color:var(--emerald)}
+  .err{color:var(--bad);font-size:13.5px;margin-top:6px;white-space:pre-line}
+  .warn{color:var(--warn);font-size:13.5px;margin-top:6px}
+  .okmsg{color:var(--ok);font-size:13.5px;margin-top:6px}
+  .note{font-size:13px;color:var(--mut);background:#fbfcf7;border:1px dashed #c4d2ba;border-radius:6px;padding:9px 12px;margin-top:12px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--emerald);color:#fff;font-weight:normal}
+  tr.active td{background:var(--lime);font-weight:bold}
+  .banddot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  canvas{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .blendrow{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 10px;background:#fcfdf9}
+  .blendrow .grid{grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}
+  .hidden{display:none}
+  .rowhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .rowhead b{color:var(--emerald)}
+  footer{text-align:center;color:var(--mut);font-size:12.5px;padding:8px 16px 26px}
+  .kbd{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Asif SaaS Studio</div>
+  <h1>Moisture Sorption &amp; Water Activity (a<sub>w</sub>) Estimator</h1>
+  <p>Predict equilibrium moisture and blend water activity — GAB · BET · Henderson isotherms</p>
+  <p style="color:#f3f6ec;font-size:12.5px">By Dr. Asif Ahmad · Version 1.0 · Category: Food Science</p>
+</header>
+<main>
+
+<section id="calc">
+  <h2>1 · Isotherm Calculator</h2>
+  <div class="grid">
+    <div>
+      <label for="preset">Preset (typical literature values, ~25&nbsp;°C)</label>
+      <select id="preset"></select>
+    </div>
+    <div>
+      <label for="model">Model</label>
+      <select id="model">
+        <option value="gab">GAB</option>
+        <option value="bet">BET</option>
+        <option value="henderson">Henderson</option>
+      </select>
+    </div>
+    <div class="p-gab p-bet"><label for="pM0">M₀ monolayer (g water / 100 g dry solids)</label><input id="pM0" type="number" step="any" value="6.5"></div>
+    <div class="p-gab p-bet"><label for="pC">C (energy constant)</label><input id="pC" type="number" step="any" value="12"></div>
+    <div class="p-gab"><label for="pK">K (GAB correction factor, 0 &lt; K &lt; 1)</label><input id="pK" type="number" step="any" value="0.85"></div>
+    <div class="p-hend hidden"><label for="pk">k (Henderson constant)</label><input id="pk" type="number" step="any" value="0.017"></div>
+    <div class="p-hend hidden"><label for="pn">n (Henderson exponent)</label><input id="pn" type="number" step="any" value="1.6"></div>
+  </div>
+  <p class="kbd">GAB is typically used over a<sub>w</sub> ≈ 0.05–0.95; BET only over a<sub>w</sub> ≈ 0.05–0.45; Henderson is an empirical two-parameter fit. Presets are <b>typical literature values — verify for your product</b>.</p>
+  <div class="grid2">
+    <div>
+      <h3>Solve from water activity</h3>
+      <label for="inAw">Water activity a<sub>w</sub> (0–1)</label>
+      <input id="inAw" type="number" step="any" min="0" max="1" value="0.60">
+      <button class="btn" id="btnFromAw" type="button">Calculate moisture →</button>
+    </div>
+    <div>
+      <h3>Solve from moisture</h3>
+      <label for="inM">Moisture, dry basis (g water / 100 g dry solids)</label>
+      <input id="inM" type="number" step="any" value="10">
+      <button class="btn" id="btnFromM" type="button">Calculate a<sub>w</sub> →</button>
+    </div>
+  </div>
+  <div id="calcErr" class="err" role="alert"></div>
+  <div id="calcWarn" class="warn"></div>
+  <div id="calcOut" class="result" aria-live="polite">Enter a value and calculate.</div>
+  <div id="calcBand"></div>
+
+  <h3>Moisture basis converter</h3>
+  <div class="grid">
+    <div><label for="convWb">Moisture, wet basis (%)</label><input id="convWb" type="number" step="any" value="20"></div>
+    <div><label for="convDb">Moisture, dry basis (g / 100 g dry solids)</label><input id="convDb" type="number" step="any" value="25"></div>
+  </div>
+  <button class="btn alt small" id="btnWb2Db" type="button">Wet → Dry</button>
+  <button class="btn alt small" id="btnDb2Wb" type="button">Dry → Wet</button>
+  <span id="convMsg" class="okmsg"></span>
+</section>
+
+<section id="data">
+  <h2>2 · Isotherm Chart &amp; Your Measured Data</h2>
+  <canvas id="chart" width="980" height="520" aria-label="Sorption isotherm chart"></canvas>
+  <p class="kbd">Curve updates live as you change the model or parameters above. Paste or upload measured points to overlay them and score the fit (RMSE, R²).</p>
+  <div class="grid2">
+    <div>
+      <label for="dataText">Paste data — two columns: a<sub>w</sub>, moisture (dry basis). CSV / TSV, header row optional.</label>
+      <textarea id="dataText" rows="7" placeholder="aw, moisture_db&#10;0.20, 4.1&#10;0.40, 6.8&#10;0.60, 10.9"></textarea>
+    </div>
+    <div>
+      <label for="dataFile">…or upload a .csv / .txt file</label>
+      <input id="dataFile" type="file" accept=".csv,.txt,text/csv,text/plain">
+      <div style="margin-top:10px">
+        <button class="btn" id="btnLoadData" type="button">Plot data &amp; score fit</button>
+        <button class="btn alt" id="btnClearData" type="button">Clear data</button>
+      </div>
+      <div id="dataMsg" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section id="blend">
+  <h2>3 · Blend Equilibrium Predictor</h2>
+  <p class="kbd">Mixing dry and semi-moist ingredients in a sealed pack? Water moves until every ingredient reaches the <b>same a<sub>w</sub></b>. Enter each ingredient below (2–6 rows). Each row uses its own isotherm (preset or custom parameters).</p>
+  <div id="blendRows"></div>
+  <button class="btn alt" id="btnAddRow" type="button">+ Add ingredient</button>
+  <button class="btn" id="btnBlend" type="button">Predict equilibrium a<sub>w</sub></button>
+  <div id="blendErr" class="err" role="alert"></div>
+  <div id="blendOut"></div>
+  <div id="blendBand"></div>
+</section>
+
+<section id="out">
+  <h2>4 · Outputs</h2>
+  <label for="summary">Summary (copy-ready)</label>
+  <textarea id="summary" rows="6" readonly placeholder="Calculator and blend results appear here as you compute them."></textarea>
+  <div>
+    <button class="btn" id="btnCopy" type="button">Copy summary</button>
+    <button class="btn alt" id="btnCsv" type="button">Download isotherm CSV (a<sub>w</sub> 0.05–0.95)</button>
+    <span id="copyMsg" class="okmsg"></span>
+  </div>
+  <div class="note">
+    <b>Honest scope.</b> Estimates come from published model equations with <i>typical</i> parameters (~25&nbsp;°C). Real products need their own measured isotherm: parameters are temperature-specific, and hysteresis is not modelled (adsorption and desorption curves differ). The blend prediction assumes a sealed system, full equilibration, no ingredient interactions beyond water transfer, and no temperature change. This tool is <b>not</b> a substitute for a measured a<sub>w</sub> (dew-point / chilled-mirror meter) in commercial release decisions. Everything runs in this page — no data leaves your browser.
+  </div>
+</section>
+
+</main>
+<footer>Moisture Sorption &amp; Water Activity Estimator v1.0 · Asif SaaS Studio · By Dr. Asif Ahmad</footer>
+<script>
+/* ================= PURE CORE — no DOM below this line ================= */
+/*PURE-CORE-START*/
+function gabM(p, aw){ var a = p.K * aw; return (p.M0 * p.C * a) / ((1 - a) * (1 - a + p.C * a)); }
+function betM(p, aw){ return (p.M0 * p.C * aw) / ((1 - aw) * (1 + (p.C - 1) * aw)); }
+function hendersonM(p, aw){ return Math.pow(-Math.log(1 - aw) / p.k, 1 / p.n); }
+function hendersonAw(p, M){ return 1 - Math.exp(-p.k * Math.pow(M, p.n)); }
+
+function modelM(model, p, aw){
+  if (model === 'gab') return gabM(p, aw);
+  if (model === 'bet') return betM(p, aw);
+  return hendersonM(p, aw);
+}
+/* Solve M(C-1)x^2 + (M0*C - M(C-2))x - M = 0 for x (=K*aw for GAB, =aw for BET); returns x or null */
+function quadSolve(p, M){
+  var A = M * (p.C - 1), B = (p.M0 * p.C - M * (p.C - 2)), Cc = -M;
+  if (Math.abs(A) < 1e-14) { if (Math.abs(B) < 1e-14) return null; return -Cc / B; }
+  var disc = B * B - 4 * A * Cc;
+  if (disc < 0) return null;
+  var sq = Math.sqrt(disc);
+  var r1 = (-B + sq) / (2 * A), r2 = (-B - sq) / (2 * A);
+  return { r1: r1, r2: r2 };
+}
+function bisectAw(model, p, M){
+  var lo = 1e-9, hi = 0.999999, flo = modelM(model, p, lo) - M, i, mid, fm;
+  if (flo > 0) return lo;
+  if (modelM(model, p, hi) - M < 0) return hi;
+  for (i = 0; i < 200; i++){
+    mid = (lo + hi) / 2; fm = modelM(model, p, mid) - M;
+    if (Math.abs(fm) < 1e-9) return mid;
+    if (fm < 0) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+function gabAw(p, M){
+  if (M <= 0) return 0;
+  var q = quadSolve(p, M), cand = [], i, x, aw, err, best = null, bestErr = 1e300;
+  if (q !== null){ if (typeof q === 'number') cand.push(q); else { cand.push(q.r1); cand.push(q.r2); } }
+  for (i = 0; i < cand.length; i++){
+    x = cand[i]; if (!(x > 0)) continue;
+    aw = x / p.K; if (!(aw > 0 && aw < 1)) continue;
+    err = Math.abs(gabM(p, aw) - M);
+    if (err < bestErr){ bestErr = err; best = aw; }
+  }
+  if (best !== null && bestErr <= 1e-6 * Math.max(1, M)) return best;
+  return bisectAw('gab', p, M);
+}
+function betAw(p, M){
+  if (M <= 0) return 0;
+  var q = quadSolve(p, M), cand = [], i, x, err, best = null, bestErr = 1e300;
+  if (q !== null){ if (typeof q === 'number') cand.push(q); else { cand.push(q.r1); cand.push(q.r2); } }
+  for (i = 0; i < cand.length; i++){
+    x = cand[i]; if (!(x > 0 && x < 1)) continue;
+    err = Math.abs(betM(p, x) - M);
+    if (err < bestErr){ bestErr = err; best = x; }
+  }
+  if (best !== null && bestErr <= 1e-6 * Math.max(1, M)) return best;
+  return bisectAw('bet', p, M);
+}
+function modelAw(model, p, M){
+  if (M <= 0) return 0;
+  if (model === 'gab') return gabAw(p, M);
+  if (model === 'bet') return betAw(p, M);
+  return hendersonAw(p, M);
+}
+function wbToDb(wb){ return wb / (100 - wb) * 100; }
+function dbToWb(db){ return db / (100 + db) * 100; }
+
+var BANDS = [
+  { max: 0.60, range: 'Below 0.60', verdict: 'Microbiologically stable', color: '#2e7d32',
+    desc: 'No microbial growth expected. The most stable zone — shelf-stable products are usually targeted below aw 0.60.' },
+  { max: 0.65, range: '0.60 – 0.65', verdict: 'Osmophilic yeasts possible', color: '#7a9a01',
+    desc: 'Osmophilic yeasts may grow slowly; most other microbes cannot.' },
+  { max: 0.75, range: '0.65 – 0.75', verdict: 'Xerophilic mould risk', color: '#c9a227',
+    desc: 'Xerophilic (dry-tolerant) moulds can grow; shelf life becomes mould-limited.' },
+  { max: 0.80, range: '0.75 – 0.80', verdict: 'Mould risk', color: '#d9820f',
+    desc: 'Most moulds can grow. Enzymatic activity also becomes significant above about aw 0.75.' },
+  { max: 0.87, range: '0.80 – 0.87', verdict: 'Yeast risk', color: '#e07b24',
+    desc: 'Most yeasts can grow; many moulds too. Short shelf life without other hurdles.' },
+  { max: 0.91, range: '0.87 – 0.91', verdict: 'Bacterial risk — pathogens possible', color: '#c1440e',
+    desc: 'Many bacteria, including pathogens, can grow. Note Staphylococcus aureus can grow down to about aw 0.86.' },
+  { max: Infinity, range: 'Above 0.91', verdict: 'High risk — most bacteria', color: '#b3261e',
+    desc: 'Most bacteria can grow. Perishable-food territory; refrigeration or other hurdles required.' }
+];
+function classifyAw(aw){
+  for (var i = 0; i < BANDS.length; i++) if (aw < BANDS[i].max) return i;
+  return BANDS.length - 1;
+}
+
+function parseData(text){
+  var points = [], errors = [], lines = String(text == null ? '' : text).split(/\r?\n/), i, raw, parts, a, m, first = true;
+  for (i = 0; i < lines.length; i++){
+    raw = lines[i];
+    if (raw.trim() === '') continue;
+    parts = raw.split(/[;,\t]/);
+    if (parts.length < 2){ errors.push({ line: i + 1, text: raw }); first = false; continue; }
+    a = parseFloat(String(parts[0]).trim()); m = parseFloat(String(parts[1]).trim());
+    if (isNaN(a) || isNaN(m)){
+      if (first){ first = false; continue; } /* header row */
+      errors.push({ line: i + 1, text: raw }); continue;
+    }
+    first = false;
+    if (!(a > 0 && a < 1) || !(m >= 0)){ errors.push({ line: i + 1, text: raw }); continue; }
+    points.push({ aw: a, m: m });
+  }
+  return { points: points, errors: errors };
+}
+
+function fitStats(points, fn){
+  var n = points.length, i, pred, ssRes = 0, mean = 0, ssTot = 0;
+  if (n === 0) return { n: 0, rmse: NaN, r2: NaN };
+  for (i = 0; i < n; i++) mean += points[i].m;
+  mean /= n;
+  for (i = 0; i < n; i++){
+    pred = fn(points[i].aw);
+    ssRes += (points[i].m - pred) * (points[i].m - pred);
+    ssTot += (points[i].m - mean) * (points[i].m - mean);
+  }
+  return { n: n, rmse: Math.sqrt(ssRes / n), r2: ssTot > 0 ? 1 - ssRes / ssTot : (ssRes === 0 ? 1 : NaN) };
+}
+
+/* ingredients: [{mass (g, wet), wb (% wet basis), model, params}] */
+function solveBlend(ings){
+  var D = 0, W = 0, det = [], i, d, w;
+  for (i = 0; i < ings.length; i++){
+    d = ings[i].mass * (1 - ings[i].wb / 100);
+    w = ings[i].mass * ings[i].wb / 100;
+    D += d; W += w;
+    det.push({ dry: d, water0: w, m0db: wbToDb(ings[i].wb) });
+  }
+  function totalWater(aw){
+    var s = 0;
+    for (var j = 0; j < ings.length; j++) s += det[j].dry * modelM(ings[j].model, ings[j].params, aw) / 100;
+    return s;
+  }
+  var lo = 0.001, hi = 0.999, mid = lo;
+  for (i = 0; i < 300; i++){
+    mid = (lo + hi) / 2;
+    if (Math.abs(totalWater(mid) - W) < 1e-10) break;
+    if (totalWater(mid) < W) lo = mid; else hi = mid;
+  }
+  var awEq = (lo + hi) / 2, items = [], W1 = 0;
+  for (i = 0; i < ings.length; i++){
+    var fdb = modelM(ings[i].model, ings[i].params, awEq);
+    var w1 = det[i].dry * fdb / 100;
+    W1 += w1;
+    items.push({
+      finalDb: fdb, finalWb: dbToWb(fdb),
+      water0: det[i].water0, water1: w1, delta: w1 - det[i].water0,
+      initialAw: modelAw(ings[i].model, ings[i].params, det[i].m0db)
+    });
+  }
+  return { aw: awEq, items: items, totalDry: D, totalWater0: W, totalWater1: W1, residual: Math.abs(W1 - W) };
+}
+/*PURE-CORE-END*/
+/* ================= UI ================= */
+var PRESETS = [
+  { name: 'Custom parameters', model: null },
+  { name: 'Wheat flour (GAB)', model: 'gab', M0: 6.5, C: 12, K: 0.85 },
+  { name: 'Skim milk powder (GAB)', model: 'gab', M0: 5.5, C: 10, K: 0.92 },
+  { name: 'Milled rice (GAB)', model: 'gab', M0: 6.0, C: 8, K: 0.80 },
+  { name: 'Raisins (GAB)', model: 'gab', M0: 8.0, C: 4, K: 0.93 },
+  { name: 'Corn starch (GAB)', model: 'gab', M0: 9.5, C: 12, K: 0.78 },
+  { name: 'Instant coffee (GAB)', model: 'gab', M0: 5.0, C: 8, K: 0.90 },
+  { name: 'Cracker / biscuit (GAB)', model: 'gab', M0: 4.5, C: 6, K: 0.85 },
+  { name: 'Potato starch (BET)', model: 'bet', M0: 8.0, C: 20 },
+  { name: 'Pasta / dried noodles (Henderson)', model: 'henderson', k: 0.017, n: 1.6 }
+];
+function $(id){ return document.getElementById(id); }
+function num(id){ return parseFloat($(id).value); }
+function fmt(x, d){ return isFinite(x) ? Number(x).toFixed(d == null ? 2 : d) : '—'; }
+
+function currentModel(){ return $('model').value; }
+function currentParams(){
+  var m = currentModel();
+  if (m === 'henderson') return { k: num('pk'), n: num('pn') };
+  if (m === 'bet') return { M0: num('pM0'), C: num('pC') };
+  return { M0: num('pM0'), C: num('pC'), K: num('pK') };
+}
+function validParams(model, p){
+  if (!(p.M0 > 0) && model !== 'henderson') return 'M0 must be a number greater than 0.';
+  if (model === 'henderson'){
+    if (!(p.k > 0)) return 'k must be a number greater than 0.';
+    if (!(p.n > 0)) return 'n must be a number greater than 0.';
+  } else {
+    if (!(p.C > 0)) return 'C must be a number greater than 0.';
+    if (model === 'gab' && !(p.K > 0 && p.K < 1)) return 'K must be between 0 and 1 (exclusive).';
+  }
+  return '';
+}
+function bandHTML(aw){
+  var idx = classifyAw(aw), b = BANDS[idx], h = '<h3>Stability &amp; microbial interpretation — a<sub>w</sub> ' + fmt(aw, 3) + '</h3>';
+  h += '<p style="font-size:15px"><span class="banddot" style="background:' + b.color + '"></span><b>' + b.verdict + '</b> (' + b.range + '). ' + b.desc + '</p>';
+  h += '<table><tr><th>a<sub>w</sub> band</th><th>Interpretation</th></tr>';
+  for (var i = 0; i < BANDS.length; i++)
+    h += '<tr' + (i === idx ? ' class="active"' : '') + '><td>' + BANDS[i].range + '</td><td><b>' + BANDS[i].verdict + '</b> — ' + BANDS[i].desc + '</td></tr>';
+  h += '</table>';
+  h += '<p class="kbd">Non-microbial notes: lipid oxidation is usually slowest near the monolayer moisture and rises again at high a<sub>w</sub>; enzymatic activity becomes significant above ~0.75; crisp/dry products lose texture as a<sub>w</sub> climbs. Microbial limits are general rules of thumb — other hurdles (pH, preservatives, temperature) also matter.</p>';
+  return h;
+}
+function setSummary(t){ var s = $('summary'); s.value = (s.value ? s.value + '\n\n' : '') + t; }
+
+function syncParamVisibility(){
+  var m = currentModel(), groups = document.querySelectorAll('#calc .p-gab, #calc .p-bet, #calc .p-hend'), i;
+  for (i = 0; i < groups.length; i++){
+    var show = (m === 'gab' && groups[i].classList.contains('p-gab')) ||
+               (m === 'bet' && groups[i].classList.contains('p-bet')) ||
+               (m === 'henderson' && groups[i].classList.contains('p-hend'));
+    groups[i].classList.toggle('hidden', !show);
+  }
+}
+function fillPresets(sel, includeCustom){
+  sel.innerHTML = '';
+  for (var i = includeCustom ? 0 : 1; i < PRESETS.length; i++){
+    var o = document.createElement('option'); o.value = i; o.textContent = PRESETS[i].name; sel.appendChild(o);
+  }
+}
+function applyPresetToCalc(idx){
+  var pr = PRESETS[idx]; if (!pr || !pr.model) return;
+  $('model').value = pr.model;
+  if (pr.M0 != null) $('pM0').value = pr.M0;
+  if (pr.C != null) $('pC').value = pr.C;
+  if (pr.K != null) $('pK').value = pr.K;
+  if (pr.k != null) $('pk').value = pr.k;
+  if (pr.n != null) $('pn').value = pr.n;
+  syncParamVisibility();
+}
+var dataPoints = [];
+var calcMarker = null; /* {aw, m} */
+
+function calcFromAw(){
+  $('calcErr').textContent = ''; $('calcWarn').textContent = '';
+  var model = currentModel(), p = currentParams(), aw = num('inAw'), v = validParams(model, p);
+  if (v){ $('calcErr').textContent = v; return; }
+  if (!(aw > 0 && aw < 1)){ $('calcErr').textContent = 'Water activity must be a number between 0 and 1 (exclusive).'; return; }
+  var warns = [];
+  if (model === 'gab'){
+    if (aw > 0.95) warns.push('Caution: aw above 0.95 is outside the usual GAB fitting range (≈0.05–0.95).');
+    if (p.K * aw >= 0.99) warns.push('Warning: K·aw is ≥ 0.99 — the GAB equation approaches its singularity at K·aw = 1, so this result is unreliable.');
+    else if (p.K * aw >= 0.95) warns.push('Caution: K·aw is close to 1 — treat this GAB result with care.');
+  }
+  if (model === 'bet' && (aw < 0.05 || aw > 0.45)) warns.push('Caution: BET is normally fitted only over aw ≈ 0.05–0.45; outside that range the result is an extrapolation.');
+  var M = modelM(model, p, aw), wb = dbToWb(M);
+  calcMarker = { aw: aw, m: M };
+  $('calcOut').innerHTML = 'At a<sub>w</sub> = <b>' + fmt(aw, 3) + '</b>, equilibrium moisture = <b>' + fmt(M) + ' g water / 100 g dry solids</b> (dry basis) = <b>' + fmt(wb) + ' % wet basis</b> — ' + model.toUpperCase() + ' model.';
+  $('calcWarn').textContent = warns.join(' ');
+  $('calcBand').innerHTML = bandHTML(aw);
+  setSummary('Isotherm (' + model.toUpperCase() + ', params ' + JSON.stringify(p) + '): aw ' + fmt(aw, 3) + ' -> moisture ' + fmt(M) + ' g/100 g dry solids (' + fmt(wb) + ' % wb). Stability: ' + BANDS[classifyAw(aw)].verdict + '.');
+  drawChart();
+}
+function calcFromM(){
+  $('calcErr').textContent = ''; $('calcWarn').textContent = '';
+  var model = currentModel(), p = currentParams(), M = num('inM'), v = validParams(model, p);
+  if (v){ $('calcErr').textContent = v; return; }
+  if (!(M >= 0) || isNaN(M)){ $('calcErr').textContent = 'Moisture must be a number ≥ 0 (dry basis).'; return; }
+  var aw = modelAw(model, p, M), wb = dbToWb(M), warns = [];
+  if (model === 'gab' && p.K * aw >= 0.99) warns.push('Warning: the solved point sits in the GAB singular zone (K·aw ≥ 0.99).');
+  if (model === 'bet' && aw > 0.45) warns.push('Caution: solved aw is above the usual BET fitting range (≈0.05–0.45).');
+  calcMarker = { aw: aw, m: M };
+  $('calcOut').innerHTML = 'At moisture = <b>' + fmt(M) + ' g / 100 g dry solids</b> (' + fmt(wb) + ' % wet basis), predicted a<sub>w</sub> = <b>' + fmt(aw, 3) + '</b> — ' + model.toUpperCase() + ' model.';
+  $('calcWarn').textContent = warns.join(' ');
+  $('calcBand').innerHTML = bandHTML(aw);
+  setSummary('Isotherm (' + model.toUpperCase() + ', params ' + JSON.stringify(p) + '): moisture ' + fmt(M) + ' g/100 g dry solids -> aw ' + fmt(aw, 3) + '. Stability: ' + BANDS[classifyAw(aw)].verdict + '.');
+  drawChart();
+}
+
+function drawChart(){
+  var cv = $('chart'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  var padL = 64, padR = 18, padT = 16, padB = 48, pw = W - padL - padR, ph = H - padT - padB;
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  var model = currentModel(), p = currentParams(), v = validParams(model, p);
+  var maxM = 10, i, a, mv;
+  if (!v){
+    for (i = 0; i <= 40; i++){ a = 0.02 + 0.97 * i / 40; mv = modelM(model, p, a); if (isFinite(mv) && mv > maxM && a <= 0.95) maxM = mv; }
+  }
+  for (i = 0; i < dataPoints.length; i++) if (dataPoints[i].m > maxM) maxM = dataPoints[i].m;
+  maxM = Math.ceil(maxM * 1.15 / 5) * 5;
+  function X(aw){ return padL + aw * pw; }
+  function Y(m){ return padT + ph - (m / maxM) * ph; }
+  ctx.strokeStyle = '#d8e2d5'; ctx.fillStyle = '#5a6b62'; ctx.font = '12px Georgia'; ctx.lineWidth = 1;
+  for (i = 0; i <= 10; i++){ a = i / 10; ctx.beginPath(); ctx.moveTo(X(a), padT); ctx.lineTo(X(a), padT + ph); ctx.stroke(); ctx.fillText(a.toFixed(1), X(a) - 8, H - 28); }
+  var step = maxM / 5;
+  for (i = 0; i <= 5; i++){ mv = step * i; ctx.beginPath(); ctx.moveTo(padL, Y(mv)); ctx.lineTo(padL + pw, Y(mv)); ctx.stroke(); ctx.fillText(fmt(mv, 0), padL - 34, Y(mv) + 4); }
+  ctx.strokeStyle = '#103E32'; ctx.strokeRect(padL, padT, pw, ph);
+  ctx.fillStyle = '#103E32'; ctx.fillText('Water activity, aw', padL + pw / 2 - 52, H - 8);
+  ctx.save(); ctx.translate(14, padT + ph / 2 + 70); ctx.rotate(-Math.PI / 2); ctx.fillText('Moisture (g / 100 g dry solids)', 0, 0); ctx.restore();
+  if (!v){
+    ctx.strokeStyle = '#103E32'; ctx.lineWidth = 2.4; ctx.beginPath(); var started = false;
+    for (i = 0; i <= 120; i++){
+      a = 0.01 + 0.98 * i / 120; mv = modelM(model, p, a);
+      if (!isFinite(mv) || mv < 0 || mv > maxM * 1.6){ started = false; continue; }
+      if (!started){ ctx.moveTo(X(a), Y(Math.min(mv, maxM))); started = true; } else ctx.lineTo(X(a), Y(Math.min(mv, maxM)));
+    }
+    ctx.stroke(); ctx.lineWidth = 1;
+  }
+  if (dataPoints.length){
+    ctx.fillStyle = '#C9A227';
+    for (i = 0; i < dataPoints.length; i++){ ctx.beginPath(); ctx.arc(X(dataPoints[i].aw), Y(dataPoints[i].m), 5, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#103E32'; ctx.stroke(); }
+  }
+  if (calcMarker){
+    ctx.fillStyle = '#b3261e'; ctx.beginPath(); ctx.arc(X(calcMarker.aw), Y(calcMarker.m), 6, 0, 6.3); ctx.fill();
+    ctx.fillStyle = '#b3261e'; ctx.fillText('aw ' + fmt(calcMarker.aw, 2) + ', ' + fmt(calcMarker.m, 1) + ' g', Math.min(X(calcMarker.aw) + 10, W - 120), Y(calcMarker.m) - 8);
+  }
+}
+
+function loadData(){
+  var res = parseData($('dataText').value), msg = $('dataMsg');
+  dataPoints = res.points;
+  var model = currentModel(), p = currentParams();
+  var html = '';
+  if (res.points.length) html += '<div class="okmsg">Loaded ' + res.points.length + ' point(s).</div>';
+  else html += '<div class="err">No valid data points found.</div>';
+  if (res.errors.length){
+    var list = [];
+    for (var i = 0; i < res.errors.length; i++) list.push('line ' + res.errors[i].line + ': "' + res.errors[i].text.replace(/</g, '&lt;') + '"');
+    html += '<div class="err">Skipped ' + res.errors.length + ' invalid line(s):\n' + list.join('\n') + '</div>';
+  }
+  if (res.points.length && !validParams(model, p)){
+    var st = fitStats(res.points, function(a){ return modelM(model, p, a); });
+    html += '<div class="result">Fit of current ' + model.toUpperCase() + ' model vs your data: n = <b>' + st.n + '</b>, RMSE = <b>' + fmt(st.rmse, 3) + '</b> g/100 g dry solids, R² = <b>' + fmt(st.r2, 4) + '</b>.</div>';
+  }
+  msg.innerHTML = html;
+  drawChart();
+}
+
+/* ---- Blend UI ---- */
+var rowCount = 0;
+function addBlendRow(presetIdx, name, mass, wb){
+  if (rowCount >= 6){ $('blendErr').textContent = 'Maximum 6 ingredients.'; return; }
+  rowCount++;
+  var div = document.createElement('div'); div.className = 'blendrow'; div.id = 'brow' + rowCount;
+  var n = rowCount;
+  div.innerHTML =
+    '<div class="rowhead"><b>Ingredient ' + n + '</b><button class="btn alt small" type="button" data-remove="' + n + '">Remove</button></div>' +
+    '<div class="grid">' +
+    '<div><label>Name</label><input data-f="name" type="text" value="' + (name || ('Ingredient ' + n)) + '"></div>' +
+    '<div><label>Mass (g)</label><input data-f="mass" type="number" step="any" value="' + (mass || 100) + '"></div>' +
+    '<div><label>Initial moisture (% wet basis)</label><input data-f="wb" type="number" step="any" value="' + (wb == null ? 10 : wb) + '"></div>' +
+    '<div><label>Preset</label><select data-f="preset"></select></div>' +
+    '<div><label>Model</label><select data-f="model"><option value="gab">GAB</option><option value="bet">BET</option><option value="henderson">Henderson</option></select></div>' +
+    '<div><label>M0</label><input data-f="M0" type="number" step="any" value="6.5"></div>' +
+    '<div><label>C</label><input data-f="C" type="number" step="any" value="12"></div>' +
+    '<div><label>K</label><input data-f="K" type="number" step="any" value="0.85"></div>' +
+    '<div><label>k</label><input data-f="k" type="number" step="any" value="0.017"></div>' +
+    '<div><label>n</label><input data-f="n" type="number" step="any" value="1.6"></div>' +
+    '</div>';
+  $('blendRows').appendChild(div);
+  var sel = div.querySelector('[data-f=preset]');
+  fillPresets(sel, false);
+  sel.addEventListener('change', function(){ applyPresetToRow(div, parseInt(sel.value, 10)); });
+  div.querySelector('[data-remove]').addEventListener('click', function(){
+    if (document.querySelectorAll('.blendrow').length <= 2){ $('blendErr').textContent = 'A blend needs at least 2 ingredients.'; return; }
+    div.remove();
+  });
+  if (presetIdx) applyPresetToRow(div, presetIdx);
+}
+function applyPresetToRow(div, idx){
+  var pr = PRESETS[idx]; if (!pr || !pr.model) return;
+  div.querySelector('[data-f=model]').value = pr.model;
+  if (pr.M0 != null) div.querySelector('[data-f=M0]').value = pr.M0;
+  if (pr.C != null) div.querySelector('[data-f=C]').value = pr.C;
+  if (pr.K != null) div.querySelector('[data-f=K]').value = pr.K;
+  if (pr.k != null) div.querySelector('[data-f=k]').value = pr.k;
+  if (pr.n != null) div.querySelector('[data-f=n]').value = pr.n;
+}
+function rowVal(div, f){ return div.querySelector('[data-f=' + f + ']').value; }
+function rowNum(div, f){ return parseFloat(rowVal(div, f)); }
+function runBlend(){
+  $('blendErr').textContent = ''; $('blendOut').innerHTML = ''; $('blendBand').innerHTML = '';
+  var rows = document.querySelectorAll('.blendrow'), ings = [], names = [], i, div;
+  if (rows.length < 2){ $('blendErr').textContent = 'Add at least 2 ingredients.'; return; }
+  for (i = 0; i < rows.length; i++){
+    div = rows[i];
+    var model = rowVal(div, 'model');
+    var p = model === 'henderson' ? { k: rowNum(div, 'k'), n: rowNum(div, 'n') }
+          : model === 'bet' ? { M0: rowNum(div, 'M0'), C: rowNum(div, 'C') }
+          : { M0: rowNum(div, 'M0'), C: rowNum(div, 'C'), K: rowNum(div, 'K') };
+    var mass = rowNum(div, 'mass'), wb = rowNum(div, 'wb');
+    var nm = rowVal(div, 'name') || ('Ingredient ' + (i + 1));
+    var v = validParams(model, p);
+    if (v){ $('blendErr').textContent = nm + ': ' + v; return; }
+    if (!(mass > 0)){ $('blendErr').textContent = nm + ': mass must be a number greater than 0 g.'; return; }
+    if (!(wb >= 0 && wb < 100)){ $('blendErr').textContent = nm + ': initial moisture must be between 0 and 100 % wet basis (and below 100).'; return; }
+    ings.push({ mass: mass, wb: wb, model: model, params: p }); names.push(nm);
+  }
+  var r = solveBlend(ings);
+  var h = '<div class="result">Predicted equilibrium a<sub>w</sub> = <b>' + fmt(r.aw, 3) + '</b> — ' + BANDS[classifyAw(r.aw)].verdict + '. Total water before = ' + fmt(r.totalWater0) + ' g, after = ' + fmt(r.totalWater1) + ' g (conservation residual ' + r.residual.toExponential(1) + ' g).</div>';
+  h += '<table><tr><th>Ingredient</th><th>Initial a<sub>w</sub></th><th>Initial moisture (% wb)</th><th>Final moisture (g/100 g dry)</th><th>Final moisture (% wb)</th><th>Water change</th></tr>';
+  var summaryLines = [];
+  for (i = 0; i < ings.length; i++){
+    var it = r.items[i], dir = it.delta > 1e-9 ? 'GAINS' : (it.delta < -1e-9 ? 'LOSES' : 'unchanged');
+    h += '<tr><td>' + names[i].replace(/</g, '&lt;') + '</td><td>' + fmt(it.initialAw, 3) + '</td><td>' + fmt(ings[i].wb) + '</td><td>' + fmt(it.finalDb) + '</td><td>' + fmt(it.finalWb) + '</td><td>' + dir + ' ' + fmt(Math.abs(it.delta)) + ' g (' + fmt(it.delta / ings[i].mass * 100) + ' g per 100 g ingredient)</td></tr>';
+    summaryLines.push(names[i] + ': ' + fmt(ings[i].wb) + '% wb -> ' + fmt(it.finalWb) + '% wb (' + dir.toLowerCase() + ' ' + fmt(Math.abs(it.delta)) + ' g water)');
+  }
+  h += '</table>';
+  $('blendOut').innerHTML = h;
+  $('blendBand').innerHTML = bandHTML(r.aw);
+  setSummary('Blend equilibrium: predicted aw ' + fmt(r.aw, 3) + ' (' + BANDS[classifyAw(r.aw)].verdict + '). ' + summaryLines.join('; ') + '. Total water conserved: ' + fmt(r.totalWater0) + ' g.');
+}
+
+/* ---- Wiring ---- */
+fillPresets($('preset'), true);
+$('preset').addEventListener('change', function(){ applyPresetToCalc(parseInt(this.value, 10)); drawChart(); });
+$('model').addEventListener('change', function(){ syncParamVisibility(); drawChart(); });
+['pM0','pC','pK','pk','pn'].forEach(function(id){ $(id).addEventListener('input', drawChart); });
+$('btnFromAw').addEventListener('click', calcFromAw);
+$('btnFromM').addEventListener('click', calcFromM);
+$('btnWb2Db').addEventListener('click', function(){
+  var wb = num('convWb');
+  if (!(wb >= 0 && wb < 100)){ $('convMsg').textContent = 'Wet basis must be 0 to <100 %.'; return; }
+  $('convDb').value = fmt(wbToDb(wb)); $('convMsg').textContent = wb + ' % wb = ' + fmt(wbToDb(wb)) + ' g/100 g dry solids.';
+});
+$('btnDb2Wb').addEventListener('click', function(){
+  var db = num('convDb');
+  if (!(db >= 0)){ $('convMsg').textContent = 'Dry basis must be ≥ 0.'; return; }
+  $('convWb').value = fmt(dbToWb(db)); $('convMsg').textContent = db + ' g/100 g dry = ' + fmt(dbToWb(db)) + ' % wb.';
+});
+$('btnLoadData').addEventListener('click', loadData);
+$('btnClearData').addEventListener('click', function(){ dataPoints = []; $('dataText').value = ''; $('dataMsg').innerHTML = ''; drawChart(); });
+$('dataFile').addEventListener('change', function(){
+  var f = this.files && this.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){ $('dataText').value = String(rd.result || ''); loadData(); };
+  rd.onerror = function(){ $('dataMsg').innerHTML = '<div class="err">Could not read that file. Try copy/pasting its contents instead.</div>'; };
+  rd.readAsText(f);
+});
+$('btnAddRow').addEventListener('click', function(){ $('blendErr').textContent = ''; addBlendRow(0); });
+$('btnBlend').addEventListener('click', runBlend);
+$('btnCopy').addEventListener('click', function(){
+  var s = $('summary');
+  if (!s.value){ $('copyMsg').textContent = 'Nothing to copy yet — run a calculation first.'; return; }
+  function done(){ $('copyMsg').textContent = 'Summary copied (or select the text above and copy manually).'; }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s.value).then(done, function(){ s.select(); done(); });
+  else { s.select(); try { document.execCommand('copy'); } catch (e) {} done(); }
+});
+$('btnCsv').addEventListener('click', function(){
+  var model = currentModel(), p = currentParams(), v = validParams(model, p);
+  if (v){ $('copyMsg').textContent = v; return; }
+  var rows = ['aw,moisture_db_g_per_100g_dry,moisture_wb_percent,model'];
+  for (var a = 0.05; a <= 0.951; a += 0.05){
+    var M = modelM(model, p, a);
+    rows.push(fmt(a, 2) + ',' + fmt(M, 3) + ',' + fmt(dbToWb(M), 3) + ',' + model.toUpperCase());
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = 'isotherm-' + model + '.csv';
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  $('copyMsg').textContent = 'CSV downloaded.';
+});
+syncParamVisibility();
+addBlendRow(1, 'Wheat flour', 100, 12);
+addBlendRow(4, 'Raisins', 100, 20);
+drawChart();
+</script>
+</body>
+</html>
